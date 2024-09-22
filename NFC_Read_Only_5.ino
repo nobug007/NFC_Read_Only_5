@@ -27,7 +27,6 @@ void setup() {
     key.keyByte[3] = 0xF7;
     key.keyByte[4] = 0xD3;
     key.keyByte[5] = 0xF7;
-
     clear_data();
 }
 
@@ -37,7 +36,7 @@ void setup() {
 void loop() {
     // Reset the loop if no new card present on the sensor/reader. This saves the entire process when idle.
     if ( ! mfrc522.PICC_IsNewCardPresent()){  
-        return;
+        setup();
     }
     // Select one of the cards  
     if ( ! mfrc522.PICC_ReadCardSerial()){
@@ -107,7 +106,7 @@ void loop() {
 int dump_byte_array2(byte *buffer, byte bufferSize) {
     for (byte i = 0; i < bufferSize; i++) {
         Read_Data[data_count++] = buffer[i];    // 각각의 블럭 데이터를 Read_data로 옮기는 것.
-        if ( buffer[i] == 0xFE ) return 0;     // 데이터의 맨 마지막이 FE 므로 빠져 나감.  이경우 마지막인 것을 알리기 위해서 return 0을 함.
+        if ( buffer[i] == 0xFE  ) return 0;     // 데이터의 맨 마지막이 FE 므로 빠져 나감.  이경우 마지막인 것을 알리기 위해서 return 0을 함.
     }
     return 1;
 }
@@ -123,10 +122,11 @@ void print_each_data_1(){
    int j = 0;   // 읽은 데이터의 갯수
    int k = 0;   // 각 데이터의 크기.
    while(i<data_count-1) {    // 데이터가 FE까지 포함 하므로, 하나를 뺐음.. -- 사실 밑에 FE와 같으면 break 하는 루틴은 없어도 됨.
-          if ( Read_Data[i-1] == 0x6E && Read_Data[i-2] == 0x65 ) {     // 하나의 데이터 사이즈를 데이터로 가지고 있으나, 이를 계산 하기 힘들어서(조금씩 달라지고 큰 수의 경우 패턴이 달라져서. ㅜ.ㅜ ) "en" 이라는 것 다음에 데이터가 쓰여지는 것을 보고, 이를 체크 함. 
+          if ( (Read_Data[i-1] == 0x6E && Read_Data[i-2] == 0x65 ) &&  Read_Data[i] != 0x3D ) {     // 하나의 데이터 사이즈를 데이터로 가지고 있으나, 이를 계산 하기 힘들어서(조금씩 달라지고 큰 수의 경우 패턴이 달라져서. ㅜ.ㅜ ) "en" 이라는 것 다음에 데이터가 쓰여지는 것을 보고, 이를 체크 함. 
             print_on = true;     // en 이후에 0x11 까지는 데이터 이므로, 그때 까지 each_data에 옮기기 위해서 설정한 플래그
             k = 0;
           }
+          
           if ( print_on == true && (Read_Data[i] == 0x11 || (Read_Data[i] == 0x51 && Read_Data[i+1] == 0x01)) ) {  // 다음 데이터의 시작이 꼭 0x11 부터 시작 되어서 그 전까지를 읽는 것으로 햇음.  2번째 ||로 체크 하는 것은 마지막 데이터는 0x51 로 시작함. - 왜 그러는지는 모르겠음. ㅜ.ㅜ
             Serial.println();   // 한줄 띄우기.  지워도 됨.
             print_on = false; 
